@@ -1,0 +1,57 @@
+# Packaging for `sqinsq`, the library half of this repository.
+#
+# Two files describe dependencies, and they answer different questions:
+#
+#   pyproject.toml   - what the library needs to work at all (ranges).
+#   requirements.txt - the exact versions every published number was produced
+#                      with (pins). Reproducing a claim means using those.
+#
+# Install for use:          pip install -e .
+# Install for development:  pip install -e ".[dev]"
+# Reproduce the results:    pip install -r requirements.txt
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sqinsq"
+version = "0.1.0"
+description = "Parsing, verifying and tightening packings of unit squares in a square"
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.10"
+authors = [{ name = "Grigoriy Dyachkov" }]
+keywords = ["packing", "geometry", "exact-arithmetic", "square-packing"]
+classifiers = [
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.10",
+    "Topic :: Scientific/Engineering :: Mathematics",
+]
+dependencies = [
+    "mpmath>=1.3",
+    "numpy>=1.24",
+    "scipy>=1.11",
+]
+
+[project.scripts]
+sqinsq = "sqinsq.cli:main"
+
+[project.optional-dependencies]
+# sympy is needed only by `sqinsq audit-table`, which checks the registry's
+# closed forms against its decimals - not by the library itself.
+audit = ["sympy>=1.12"]
+dev = ["pytest>=8.0", "sympy>=1.12"]
+
+[tool.setuptools]
+# sqinsq.commands is listed explicitly: it is the runnable half of the tool and
+# has to travel inside the wheel, otherwise an installed package can be imported
+# but not used.
+packages = ["sqinsq", "sqinsq.commands"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100

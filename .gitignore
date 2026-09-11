@@ -1,0 +1,15 @@
+# Python
+__pycache__/
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+
+# Registry snapshots and run artefacts: produced by the scripts, never committed.
+# `data/*` and not `data/`: git never looks inside an excluded directory, so the
+# re-include below would silently lose the one file in data/ that is published.
+data/*
+!data/external/
+data/external/*
+!data/external/EXTERNAL.md
+output/

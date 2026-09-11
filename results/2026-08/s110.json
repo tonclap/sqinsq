@@ -1,0 +1,53 @@
+{
+  "n": 110,
+  "side": "10.99679327395374924222302220989803",
+  "verification": {
+    "tolerance": "0",
+    "admissible": true,
+    "max_overlap": "0.0",
+    "max_outside": "0.0",
+    "problems": [],
+    "foreign_verifier": null
+  },
+  "tightness": {
+    "tight_side": "10.99679327395374924222302220892135",
+    "slack": "9.76683e-28"
+  },
+  "structure": {
+    "contact_tolerance": "1.0e-12",
+    "squares": 110,
+    "tilted": 46,
+    "distinct_angles": 19,
+    "contacts_square": 102,
+    "contacts_wall": 6,
+    "unknowns": 139,
+    "equations": 108,
+    "tilt_angles_deg": [
+      "23.9164851754",
+      "26.4139511246",
+      "27.3254658716",
+      "28.0834680184",
+      "28.1166413734",
+      "28.1575821516",
+      "28.2838570597",
+      "57.8455476223",
+      "57.8634764473",
+      "60.4590285026",
+      "60.5201543364",
+      "62.5113749904",
+      "63.9363081005",
+      "64.0140872941",
+      "64.0844309719",
+      "64.5862203471",
+      "65.1276891672",
+      "88.8781633573",
+      "89.8414083567"
+    ]
+  },
+  "provenance": {
+    "file": "squares-110.txt",
+    "sha256_lf": "385f9677d6d1c9045fe315a594fd27fc1d0e9ec3286bba4815de1a4d1bbb5287",
+    "recorded": "2026-09-11",
+    "generated_by": "sqinsq results"
+  }
+}

@@ -1,0 +1,12 @@
+# Everything in requirements.txt, plus what is needed to run the test suite.
+#
+#     pip install -r requirements-dev.txt
+#     python -m pytest tests/ -q
+#
+# The tests are self-contained: they build packings in memory and write to
+# pytest's tmp_path, so they need neither a registry snapshot nor the
+# third-party verifier from data/external.
+
+-r requirements.txt
+
+pytest>=8.0

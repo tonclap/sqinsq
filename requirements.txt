@@ -1,0 +1,28 @@
+# Dependencies for sqinsq.
+#
+# Developed and tested on Python 3.10. Earlier versions are untested: the
+# modules do carry `from __future__ import annotations`, so the 3.10-style
+# annotations alone are not a hard barrier, but nothing below 3.10 was run.
+# The versions below are the ones every published number was produced with;
+# newer releases are expected to work, but the results in data/ were not
+# re-verified against them.
+#
+# Install:
+#     python -m venv .venv
+#     .venv/Scripts/activate      # Windows
+#     source .venv/bin/activate   # Linux / macOS
+#     pip install -r requirements.txt
+
+# Arbitrary-precision arithmetic. The packing geometry, the polisher and both
+# verifiers run on mpmath.mpf at 300 significant digits; float is used only as
+# a fast pre-filter that never gets the final say.
+mpmath==1.3.0
+
+# Array plumbing for the linear-programming and refinement steps.
+numpy==1.26.4
+
+# scipy.optimize.linprog (HiGHS backend) and sparse matrices in sqinsq/polish.py.
+scipy==1.15.3
+
+# Closed-form audit of the registry table (`sqinsq audit-table` only).
+sympy==1.14.0
