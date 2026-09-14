@@ -10,6 +10,27 @@ The value of this module is not the picture but the **closed loop**: what we
 generate is read back by our own parser and checked by the verifier. If the loop
 closes, the picture describes exactly the numbers claimed alongside it, and not
 approximately those.
+
+Three conventions worth adopting if there is ever another submission, found by
+reading the registry author's own tools (published 2026-09-12, read 2026-09-15).
+They are recorded rather than implemented because each one only pays off at the
+moment a file is sent, and the five lines cost the same then as now:
+
+* **``<parser:g>``.** His parser honours a hint namespace: an SVG declaring
+  ``xmlns:parser="urn:parser"`` and wrapping its squares in ``<parser:g>`` tells
+  the parser to read those children and skip their siblings. Without it, our
+  files are read by heuristics over fills and fill-rules. With it, the author's
+  own tool reads exactly the squares we mean - which is the cheapest possible
+  form of "here is what I claim, check it yourself".
+* **The emitter of the site's own format.** His ``refine_packing.cpp``
+  (``save_svg_raw``) writes the registry style directly: entities ``s`` and
+  ``hs``, ``viewBox="-&hs; -&hs; &s; &s;"``, and every square as
+  ``translate(x y) rotate(deg) translate(-.5 -.5)``. Useful as the reference to
+  diff against, rather than trusting that our output is "also a valid SVG".
+* **Precision declared by the file.** His parser can derive its working
+  precision from the digit counts of the DTD entities instead of being told.
+  Ours is always told; the failure it protects against - reading a 34-digit file
+  at 15 digits - is silent when it happens.
 """
 
 from __future__ import annotations

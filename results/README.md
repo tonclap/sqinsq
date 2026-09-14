@@ -50,6 +50,17 @@ to everything (wrong path, unparsed file, changed output wording) would confirm
 37 records out of 37 exactly as convincingly as a working one, so its agreement
 is only recorded once it has demonstrated that it can disagree.
 
+**The three verdicts are three different statements, not one checked three
+times.** `verification.admissible` is decided at **zero** tolerance: any overlap
+at all is a rejection. Both foreign verifiers treat a gap smaller than their
+epsilon as a separation — `1e-100` for Schadt's, and for Ellsworth's an epsilon
+derived from the digit count of the file, which is `1e-31` for these 34-digit
+coordinates. So a foreign "no overlaps" is a weaker claim than `admissible`, and
+the two must not be collapsed into one sentence. The distinction is not
+pedantic: an internal tolerance of `1e-12` once passed seven packings out of
+thirty-two that a foreign verifier rejected, which is why the tolerance here is
+zero and why the foreign verdicts are recorded separately rather than summed.
+
 Records are re-written when a new verdict is added to them. `provenance.recorded`
 stays the date the record was first written and `provenance.updated` is the last
 such change; both refer to the same bytes, and `sha256_lf` proves it.
