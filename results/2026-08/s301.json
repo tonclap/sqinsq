@@ -7,7 +7,9 @@
     "max_overlap": "0.0",
     "max_outside": "0.0",
     "problems": [],
-    "foreign_verifier": null
+    "foreign_verifiers": {
+      "ellsworth": "valid"
+    }
   },
   "tightness": {
     "tight_side": "17.8686801184171979246219571591685",
@@ -57,6 +59,7 @@
     "file": "squares-301.txt",
     "sha256_lf": "813b6896843b65cf07baac1eb1cfef8d1bd53d45d5467f4acbb5f2200fbd1df4",
     "recorded": "2026-09-11",
+    "updated": "2026-09-14",
     "generated_by": "sqinsq results"
   }
 }

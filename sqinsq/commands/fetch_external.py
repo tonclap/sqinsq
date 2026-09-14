@@ -1,22 +1,26 @@
-"""Fetch the third-party verifier this project cross-checks itself against.
+"""Fetch the third-party verifiers this project cross-checks itself against.
 
 Our verifier and our polisher were written by the same head. If they are wrong
 in the same way, no internal check can reveal it — so every packing is also run
-through an *independent* implementation: `check.py` by Thomas Schadt
-(GitHub: BalthasarStrauss), which has its own Taylor series for sine and
-cosine, its own separating-axis test and Decimal arithmetic at 300 digits.
+through *independent* implementations, by two different authors:
 
-That file is somebody else's work, so this repository does not carry a copy of
-it. It is downloaded on demand from the upstream repository, pinned to an exact
-commit, and checked against a recorded SHA-256 — reproducibility without
+* `check.py` by Thomas Schadt (GitHub: BalthasarStrauss) — its own Taylor series
+  for sine and cosine, its own separating-axis test, Decimal at 300 digits;
+* `check_packing.py` by David Ellsworth (GitHub: Davidebyzero) — the author of
+  the registry itself, published 2026-09-12 together with his other tools.
+
+Those files are other people's work, so this repository does not carry copies of
+them. They are downloaded on demand from the upstream repositories, pinned to
+exact commits, and checked against recorded SHA-256 — reproducibility without
 redistribution.
 
     sqinsq fetch-external            # download what is missing
     sqinsq fetch-external --check    # verify local copies, download nothing
     sqinsq fetch-external --force    # re-download even if present
 
-Upstream is MIT-licensed (Copyright (c) 2025 Thomas Schadt), so vendoring would
-also have been allowed; not vendoring is a deliberate choice, see
+Schadt's repository is MIT-licensed, so vendoring it would also have been
+allowed; not vendoring is a deliberate choice. Ellsworth's repository carries no
+licence file at all, which makes the same choice the only permissible one — see
 data/external/EXTERNAL.md.
 """
 
@@ -30,30 +34,41 @@ import urllib.request
 from sqinsq.paths import data_root, lf_sha256
 
 
-REPO = "BalthasarStrauss/Squares-packing_S-29-_New-Record"
-# Pinned to a commit, not to a branch: `main` can move, and then the file that
+# Pinned to commits, not to branches: `main` can move, and then the file that
 # vouches for our numbers would silently stop being the file that vouched for
-# them. Bump this deliberately, and re-run the cross-check when you do.
-COMMIT = "71ea2ee9166fb7ffcefb6f9bea6124fab6ad95c3"
-BASE = f"https://raw.githubusercontent.com/{REPO}/{COMMIT}"
+# them. Bump a pin deliberately, and re-run the cross-check when you do.
+SCHADT = "BalthasarStrauss/Squares-packing_S-29-_New-Record"
+SCHADT_COMMIT = "71ea2ee9166fb7ffcefb6f9bea6124fab6ad95c3"
+ELLSWORTH = "Davidebyzero/packing_squares_in_squares__tools"
+ELLSWORTH_COMMIT = "79f8a378d52e757d70f7cfb2c2f7a24a53da0204"
 
 # SHA-256 of the LF-normalised content, not of the raw bytes. Upstream ships
 # CRLF, this tree is LF (.gitattributes), and a hash over raw bytes would
 # disagree with itself depending on which side of a clone you stand on.
 FILES = {
     "schadt_check.py": (
+        SCHADT,
+        SCHADT_COMMIT,
         "check.py",
         "34ba952737fa03835778cfdc549258d7f8352338b8417d30a9bdc23475b19efa",
     ),
     "schadt_s29_squares.txt": (
+        SCHADT,
+        SCHADT_COMMIT,
         "squares.txt",
         "24d9a347bf6d9d3df295232323304be3d56a0c11929a5ad2fe302c959122b318",
+    ),
+    "ellsworth_check.py": (
+        ELLSWORTH,
+        ELLSWORTH_COMMIT,
+        "check_packing.py",
+        "75f60160e43521514263e6f51b35de2b7588ec6e61268cb22104ab139a4107f5",
     ),
 }
 
 
-def download(remote: str) -> bytes:
-    url = f"{BASE}/{remote}"
+def download(repo: str, commit: str, remote: str) -> bytes:
+    url = f"https://raw.githubusercontent.com/{repo}/{commit}/{remote}"
     request = urllib.request.Request(url, headers={"User-Agent": "sqinsq"})
     with urllib.request.urlopen(request, timeout=60) as response:
         return response.read()
@@ -69,7 +84,7 @@ def main() -> int:
     external.mkdir(parents=True, exist_ok=True)
     failures = 0
 
-    for local_name, (remote_name, expected) in FILES.items():
+    for local_name, (repo, commit, remote_name, expected) in FILES.items():
         target = external / local_name
 
         if target.exists() and not args.force:
@@ -91,11 +106,11 @@ def main() -> int:
             continue
 
         try:
-            payload = download(remote_name)
+            payload = download(repo, commit, remote_name)
         except (urllib.error.URLError, TimeoutError) as error:
             failures += 1
             print(f"FAILED   {local_name}: {error}")
-            print(f"         fetch it by hand from https://github.com/{REPO}/blob/{COMMIT}/{remote_name}")
+            print(f"         fetch it by hand from https://github.com/{repo}/blob/{commit}/{remote_name}")
             print(f"         and save it as {target}")
             continue
 

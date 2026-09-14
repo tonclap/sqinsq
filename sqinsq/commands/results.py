@@ -6,7 +6,8 @@ packing it writes what the value is, what verified it, what the packing looks
 like structurally, and which bytes it came from.
 
     sqinsq results packings/squares-*.txt --out results/2026-08
-    sqinsq results one.txt --out results --crosscheck   # add the foreign verdict
+    sqinsq results one.txt --out results --crosscheck             # every foreign verifier
+    sqinsq results one.txt --out results --crosscheck ellsworth   # just one of them
 
 The structural part is the point, not decoration. An improvement in the 12th
 significant digit is invisible in a picture, so "what actually changed here" has
@@ -26,17 +27,14 @@ from __future__ import annotations
 
 import argparse
 import json
-import shutil
-import subprocess
 import sys
-import tempfile
 from datetime import date
 from pathlib import Path
 
 from mpmath import mp, mpf
 
-from sqinsq import contacts, schadt, svgpack, verify
-from sqinsq.paths import external_file, lf_sha256
+from sqinsq import contacts, foreign, schadt, svgpack, verify
+from sqinsq.paths import lf_sha256
 
 mp.dps = 60
 DIGITS = 34
@@ -60,38 +58,44 @@ def entry_number(path: Path) -> int:
     raise SystemExit(f"{path}: cannot tell which entry this is from the file name")
 
 
-def foreign_verdict(coords: Path) -> str:
-    """Run the third-party verifier on one coordinate file, in a scratch copy.
+def previous(target: Path, sha256_lf: str) -> dict | None:
+    """The record already on disk, if it describes the same bytes.
 
-    It reads `squares.txt` from its own directory, so it gets a scratch one:
-    writing our packings next to somebody else's code would make our runs look
-    like edits of it.
+    A record is re-written whenever a new field appears in it - the verdict of a
+    second foreign verifier, here - and the date it was first written is part of
+    the claim, not bookkeeping. So it is carried over when the file behind the
+    record is provably the same one, and only then.
     """
-    checker = external_file("schadt_check.py")
-    with tempfile.TemporaryDirectory() as tmp:
-        workdir = Path(tmp)
-        shutil.copyfile(checker, workdir / checker.name)
-        shutil.copyfile(coords, workdir / "squares.txt")
-        proc = subprocess.run(
-            [sys.executable, checker.name],
-            cwd=workdir,
-            capture_output=True,
-            text=True,
-            timeout=600,
-        )
-    out = proc.stdout
-    if "VALID" in out and "INVALID" not in out:
-        return "valid"
-    if "INVALID" in out:
-        return "invalid"
-    return "unreadable"
+    if not target.exists():
+        return None
+    try:
+        old = json.loads(target.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return None
+    return old if old.get("provenance", {}).get("sha256_lf") == sha256_lf else None
 
 
-def record(path: Path, *, crosscheck: bool) -> dict:
+def record(path: Path, *, verifiers: list[str], target: Path) -> dict:
     packing = load(path)
     result = verify.check(packing, tol=mpf(0))
     tight = verify.tight_side(packing)
     report = contacts.analyse(packing)
+    sha = lf_sha256(path)
+    old = previous(target, sha)
+
+    verdicts: dict[str, str] = {}
+    if old:
+        verdicts.update(old["verification"].get("foreign_verifiers", {}))
+        # Records written before there was a second foreign verifier carry a
+        # single `foreign_verifier`, and it always meant Schadt's. Migrated here
+        # rather than dropped: it is a verdict that was actually obtained, and
+        # re-running it costs hours.
+        legacy = old["verification"].get("foreign_verifier")
+        if legacy and "schadt" not in verdicts:
+            verdicts["schadt"] = legacy
+    if path.suffix == ".txt":
+        for key in verifiers:
+            verdicts[key], _ = foreign.run(foreign.VERIFIERS[key], path)
 
     return {
         "n": entry_number(path),
@@ -104,7 +108,11 @@ def record(path: Path, *, crosscheck: bool) -> dict:
             "max_overlap": mp.nstr(result.max_overlap, 6),
             "max_outside": mp.nstr(result.max_outside, 6),
             "problems": list(result.problems),
-            "foreign_verifier": foreign_verdict(path) if crosscheck and path.suffix == ".txt" else None,
+            # One entry per foreign implementation that has actually been run on
+            # this file, by name. A verifier that was not run is absent rather
+            # than null: "we did not ask" and "it had nothing to say" are
+            # different statements, and only the first one is true here.
+            "foreign_verifiers": verdicts,
         },
         "tightness": {
             # How much room is left between the declared side and the smallest
@@ -132,8 +140,9 @@ def record(path: Path, *, crosscheck: bool) -> dict:
         },
         "provenance": {
             "file": path.name,
-            "sha256_lf": lf_sha256(path),
-            "recorded": date.today().isoformat(),
+            "sha256_lf": sha,
+            "recorded": old["provenance"]["recorded"] if old else date.today().isoformat(),
+            "updated": date.today().isoformat(),
             "generated_by": "sqinsq results",
         },
     }
@@ -145,18 +154,40 @@ def main() -> int:
     parser.add_argument("--out", required=True, type=Path, help="directory for the records")
     parser.add_argument(
         "--crosscheck",
-        action="store_true",
-        help="also run the third-party verifier on each coordinate file (slow)",
+        nargs="*",
+        choices=sorted(foreign.VERIFIERS),
+        help="also run these foreign verifiers on each coordinate file (slow); "
+        "no names means all of them",
     )
     args = parser.parse_args()
+
+    verifiers = sorted(foreign.VERIFIERS) if args.crosscheck == [] else (args.crosscheck or [])
 
     args.out.mkdir(parents=True, exist_ok=True)
     written = []
     rejected = 0
 
-    for path in sorted(args.paths, key=entry_number):
-        data = record(path, crosscheck=args.crosscheck)
-        target = args.out / f"s{data['n']}.json"
+    paths = sorted(args.paths, key=entry_number)
+
+    # Before any verdict is recorded, each foreign verifier is shown a packing it
+    # must reject. One that agrees with everything would fill the records with
+    # "valid" and make them worse than empty - see sqinsq/foreign.py.
+    control_file = next((p for p in paths if p.suffix == ".txt"), None)
+    for key in verifiers:
+        if control_file is None:
+            raise SystemExit("--crosscheck needs at least one .txt coordinate file")
+        ok, verdict = foreign.negative_control(foreign.VERIFIERS[key], control_file)
+        if not ok:
+            raise SystemExit(
+                f"negative control failed for {key}: on a packing with two squares placed on\n"
+                f"top of each other it answered {verdict!r} instead of 'invalid'. Nothing was\n"
+                f"written - a verdict from a verifier that cannot disagree is not evidence."
+            )
+        print(f"negative control ok: {key} rejects a deliberate overlap in {control_file.name}")
+
+    for path in paths:
+        target = args.out / f"s{entry_number(path)}.json"
+        data = record(path, verifiers=verifiers, target=target)
         target.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8", newline="\n")
         written.append(data)
         mark = "ok  " if data["verification"]["admissible"] else "FAIL"

@@ -52,6 +52,7 @@ COMMANDS: dict[str, tuple[str, str]] = {
     "verify-interval": ("verify_interval", "prove gaps are positive, in interval arithmetic"),
     "verify-dump": ("verify_dump", "dump verdicts over every packing: the refactoring baseline"),
     "agreement": ("check_schadt_agreement", "our reading of the coordinate format against theirs"),
+    "agreement-ellsworth": ("agreement_ellsworth", "our SVG reading against the author's own parser"),
     "check-gradients": ("check_gradients", "analytic derivatives against finite differences"),
 }
 
@@ -65,7 +66,7 @@ GROUPS = [
     (
         "Independent verification",
         ["fetch-external", "crosscheck", "verify-external", "verify-interval", "verify-dump",
-         "agreement", "check-gradients"],
+         "agreement", "agreement-ellsworth", "check-gradients"],
     ),
 ]
 

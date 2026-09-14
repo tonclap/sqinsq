@@ -30,6 +30,29 @@ takes, and picking convenient cases would be the worst possible response to it.
 `squares.txt` is Schadt's record packing for n = 29, used as a positive control:
 a configuration we did not produce, which the pipeline must read and confirm.
 
+## `ellsworth_check.py`
+
+| | |
+| --- | --- |
+| Author | David Ellsworth (GitHub: [Davidebyzero](https://github.com/Davidebyzero)) |
+| Upstream | <https://github.com/Davidebyzero/packing_squares_in_squares__tools> |
+| Pinned commit | `79f8a378d52e757d70f7cfb2c2f7a24a53da0204` (2026-09-12) |
+| Licence | **none stated** — no licence file in the repository |
+| Upstream names | `check_packing.py` |
+
+The author of the registry this project submits to published his own tools on
+2026-09-12. `check_packing.py` is a second independent verifier: `Decimal`,
+its own Taylor series, its own separating-axis test, and an epsilon taken from
+the digit count of the file it is given (`1e-31` for our 34-digit coordinates)
+unless one is passed on the command line. It reads the same text format as
+Schadt's, which is why it cost a wrapper rather than a converter.
+
+**The missing licence is the reason this file must never be vendored.** With
+Schadt's MIT file, fetching instead of copying is a choice about drift; here a
+copy in this repository would be redistribution of work whose author has granted
+no permission for it. Fetch-on-demand from a pinned commit is the only form in
+which it may be used — in this tree and in any tree built from it.
+
 ### Line endings
 
 The pinned hashes are taken over **LF-normalised** content. Upstream ships CRLF;

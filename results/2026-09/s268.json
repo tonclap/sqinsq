@@ -7,7 +7,10 @@
     "max_overlap": "0.0",
     "max_outside": "0.0",
     "problems": [],
-    "foreign_verifier": "valid"
+    "foreign_verifiers": {
+      "schadt": "valid",
+      "ellsworth": "valid"
+    }
   },
   "tightness": {
     "tight_side": "16.87931143465368311843977372515851",
@@ -45,6 +48,7 @@
     "file": "squares-268.txt",
     "sha256_lf": "eeadd7a5ceefe39ffe6db7fd00674883ba22c48601c2867919636a7e81d4452e",
     "recorded": "2026-09-11",
+    "updated": "2026-09-14",
     "generated_by": "sqinsq results"
   }
 }

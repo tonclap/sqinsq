@@ -22,17 +22,37 @@ tidied up once the outcome is known is not an audit trail.
 | `side` | the value being claimed, to 34 digits |
 | `verification.admissible` | does the packing survive an exact check at **zero** overlap tolerance |
 | `verification.max_overlap` / `max_outside` | by how much it fails, if it does |
-| `verification.foreign_verifier` | the verdict of Thomas Schadt's independent `check.py`, where it was run |
+| `verification.foreign_verifiers` | verdicts of independent implementations by other authors, by name |
 | `tightness.tight_side` / `slack` | the smallest axis-aligned square that really contains the packing, and the room left over |
 | `structure.*` | tilted squares, distinct tilt angles, contacts, degrees of freedom |
 | `provenance.sha256_lf` | the hash of the exact file this was computed from |
 
-`foreign_verifier` is `null` in the 2026-08 set and filled in 2026-09. That is
-not an omission to read past: those 32 packings were cleared by the foreign
-verifier in August, before these records existed, and a pass over all of them
-takes hours — so the field says "not run when this record was written" rather
-than claiming a verdict it did not obtain. Re-running it is one command,
-`sqinsq crosscheck`, and that is the point of publishing the tool.
+### The foreign verdicts
+
+Our verifier and our polisher were written by the same head, so their agreement
+is not evidence. Every record therefore carries the verdicts of implementations
+written by other people, keyed by author:
+
+* `schadt` — `check.py` by Thomas Schadt: `Decimal` at 300 digits, epsilon
+  `1e-100`, its own separating-axis test;
+* `ellsworth` — `check_packing.py` by David Ellsworth, who keeps the registry
+  itself; published 2026-09-12, added here on 2026-09-14. Its epsilon comes from
+  the file, so for these 34-digit coordinates it checks at `1e-31`.
+
+Both are fetched from pinned commits by `sqinsq fetch-external` and run by
+`sqinsq crosscheck`; a verifier that was never run on a file is **absent** from
+the record rather than `null`, because "we did not ask" and "it had nothing to
+say" are different statements.
+
+**Every run starts with a packing the verifier must reject** — the same file
+with one square moved exactly on top of another. A verifier that answers "valid"
+to everything (wrong path, unparsed file, changed output wording) would confirm
+37 records out of 37 exactly as convincingly as a working one, so its agreement
+is only recorded once it has demonstrated that it can disagree.
+
+Records are re-written when a new verdict is added to them. `provenance.recorded`
+stays the date the record was first written and `provenance.updated` is the last
+such change; both refer to the same bytes, and `sha256_lf` proves it.
 
 ## Why `structure` is here
 
@@ -61,9 +81,9 @@ sqinsq results <coordinate file> --out /tmp/check
 diff /tmp/check/s238.json results/2026-08/s238.json
 ```
 
-Two fields will differ and should: `provenance.recorded` is the date the record
-was written, and `verification.foreign_verifier` is `null` unless you pass
-`--crosscheck` (it needs the third-party verifier, which `sqinsq fetch-external`
+Two fields will differ and should: the dates in `provenance`, and
+`verification.foreign_verifiers`, which stays empty unless you pass
+`--crosscheck` (it needs the third-party verifiers, which `sqinsq fetch-external`
 downloads).
 
 ## What these records are not
